@@ -1,26 +1,79 @@
-#include <iostream>
+﻿#include <iostream>
 #include <string>
 
 using namespace std;
 
 
-int main() {
-    int age{ 27 };
+namespace
+{
+    void argregatorPersolalInfo(int age, double weight) {
 
-    int ageAnother;
-    ageAnother = 27;
+        double height;
+        wstring name{ L"Vladislav" }, description;
 
-    int zeroInt{};
+        wcout << "Name: " << name << "\n";
+        wcout << "Age: " << age << " Weight: "
+            << weight << endl;
 
-    double weight{ 76.12 }, height;
-    string name{ "Vladislav" }, description;
-
-    cout << "Name: " << name << "\n";
-    cout << "Age: " << age << endl;
-    {
-        cout << "Enter height:" << endl;
-        cin >> height;
+        {
+            wcout << "Enter height:" << endl;
+            cin >> height;
+            wcin >> description;
+        }
     }
-    
+
+    void argregatorPersolalInfo()
+    {
+        argregatorPersolalInfo(27, 77.3);
+    }
+}
+
+namespace problems
+{
+    // TO DO:
+    /*
+    * Дано трехзначное натуральное число N.
+    * Нужно найти сумму цифр числа N
+    */
+    int problem1() {
+        int N;
+        std::cin >> N;
+        return N % 10 + (N / 10) % 10 + N / 100;
+    }
+
+    int problem1AlexR() {
+        int N;
+        std::cin >> N;
+
+        auto acc{ 0 };
+        while (N) {
+            //acc = acc + N % 10;
+            acc += N % 10;
+            N /= 10;
+        }
+
+        return acc;
+    }
+
+    int problem1Diamond() {
+        std::string number_str;
+        std::cin >> number_str;
+
+        auto it = number_str.begin();
+
+        auto acc{ 0 };
+        //for (int index = 0; index < number_str.length(); index++)
+        //    acc += number_str[index] - '0';
+
+        for (auto symbol : number_str)
+            acc += symbol - '0';
+        return acc;
+    }
+}
+
+
+int main() {
+    //argregatorPersolalInfo();
+    auto result = problems::problem1Diamond();
     system("pause");
 }
