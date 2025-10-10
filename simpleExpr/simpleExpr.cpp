@@ -166,15 +166,14 @@ namespace problems
         if (count)
             return acc / count;
         return -1;
-    }    
+    }
 }
 
 
 int main() {
-    //argregatorPersolalInfo();
     auto result = problems::problem4();
-
     //cout << result.first << result.second << endl;
     cout << result;
+
     system("pause");
 }
