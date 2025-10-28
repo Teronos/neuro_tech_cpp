@@ -38,13 +38,13 @@ namespace problems
     */
     int problem1() {
         int N;
-        std::cin >> N;
+        cin >> N;
         return N % 10 + (N / 10) % 10 + N / 100;
     }
 
     int problem1AlexR() {
         int N;
-        std::cin >> N;
+        cin >> N;
 
         auto acc{ 0 };
         while (N) {
@@ -57,8 +57,8 @@ namespace problems
     }
 
     int problem1Diamond() {
-        std::string number_str;
-        std::cin >> number_str;
+        string number_str;
+        cin >> number_str;
 
         auto it = number_str.begin();
 
@@ -84,7 +84,7 @@ namespace problems
         string n;
         cin >> n;
         auto accEven = 0, accNotEven = 0;
-        for (auto [index, symbol] : std::views::enumerate(n))
+        for (auto [index, symbol] : views::enumerate(n))
         {
             auto number = symbol - '0';
             if (index % 2 == 0)
@@ -171,9 +171,9 @@ namespace problems
 
 
 int main() {
-    auto result = problems::problem4();
+    //auto result = problems::problem4();
     //cout << result.first << result.second << endl;
-    cout << result;
+    //cout << result;
 
     system("pause");
 }
