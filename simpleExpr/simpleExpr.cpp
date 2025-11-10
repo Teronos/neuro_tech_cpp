@@ -317,12 +317,13 @@ namespace Labs
 
 
     ComplexNumber Polynom::at(const ComplexNumber& x) const {
-        int index = 0;
-        auto result = ComplexNumber(0, 0);
-        for (auto& coef : *this)
-            result = result + x.pow(index) * coef;
-
-        return result;
+        return ranges::fold_left(views::enumerate(BasePolynom(*this)),
+            ComplexNumber(0, 0), [&](auto acc, auto couple) {
+                auto& [index, coef] = couple;
+                acc = acc + x.pow(index) * coef;
+                return acc;
+            }
+        );
     }
 
     namespace Tests
@@ -335,7 +336,9 @@ namespace Labs
         }
 
         void polynom() {
-            auto poly = Polynom({ ComplexNumber(0, 1), ComplexNumber(0, 1) });
+            auto poly = Polynom({ ComplexNumber(0, 10), ComplexNumber(0, 1) });
+            assert(poly.at(ComplexNumber(0, 0)) == ComplexNumber(0, 10));
+            assert(poly.at(ComplexNumber(1, 0)) == ComplexNumber(0, 11));
         }
     }
 }
