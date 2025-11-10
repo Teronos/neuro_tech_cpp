@@ -317,6 +317,13 @@ namespace Labs
 
 
     ComplexNumber Polynom::at(const ComplexNumber& x) const {
+        // auto result = ComplexNumber(0, 0);
+        // auto index{0};
+        // for (auto& coef: *this) {
+        //      result = result + x.pow(index) * coef;
+        //      index++;
+        // }
+        // return result;
         return ranges::fold_left(views::enumerate(BasePolynom(*this)),
             ComplexNumber(0, 0), [&](auto acc, auto couple) {
                 auto& [index, coef] = couple;
