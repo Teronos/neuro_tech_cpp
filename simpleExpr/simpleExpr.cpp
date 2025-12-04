@@ -1,5 +1,8 @@
 ﻿#include "simpleExpr.h"
 
+#include <random>
+#include <set>
+
 using namespace std;
 
 namespace
@@ -275,11 +278,153 @@ namespace problems
             result += format("{} ", num);
         return result;
     }
+
+    int problem10() {
+        size_t size;
+        cin >> size;
+        vector<int> collect(size);
+
+        for (auto& elem : collect)
+            cin >> elem;
+        return ranges::max(collect);
+    }
+
+    int problem10Other() {
+        size_t numbers;
+        cin >> numbers;
+
+        auto max = numeric_limits<int>::min();
+        int number = max;
+        for (auto i = 0; i < numbers; i++) {
+            cin >> number;
+            if (number > max)
+                max = number;
+        }
+        return max;
+    }
+
+    int problem11() {
+        size_t numbers;
+        cin >> numbers;
+
+        auto countPositive{ 0 }, current{ 0 };
+        for (auto i = 0; i < numbers; i++) {
+            cin >> current;
+            if (current > 0)
+                countPositive++;
+        }
+        return countPositive;
+    }
+
+    int problem11Other() {
+        size_t size;
+        cin >> size;
+        vector<int> collect(size);
+
+        for (auto& elem : collect)
+            cin >> elem;
+
+        auto positive = views::filter(collect, [](auto num) { return num > 0; });
+        return std::transform_reduce(
+            positive.begin(), positive.end(), 0, plus{}, [](auto) { return 1; }
+        );
+    }
+
+    int problem12() {
+        string str;
+        constexpr auto sep = ' ';
+        getline(cin, str);
+
+        auto beginNumber = 0, sum = 0;
+        for (auto index = 0; index < str.length() + 1; index++) {
+            if (str[index] != sep && index != str.length())
+                continue;
+
+            auto number = stoi(str.substr(beginNumber, index));
+            auto absNumber = abs(number);
+            if (absNumber < 100 && absNumber > 9 && number % 8 == 0)
+                sum += number;
+
+            beginNumber = index + 1;
+        }
+
+        return sum;
+    }
+
+    int problem13() {
+        int number;
+        vector<int> numbers;
+        for (;;) {
+            cin >> number;
+            if (!number)
+                break;
+            numbers.push_back(number);
+        }
+        return ranges::count(numbers, *ranges::max_element(numbers));
+    }
+
+    int problem13Other() {
+        auto number{ 0 }, maxNumber{ numeric_limits<int>::min() }, count{ 0 };
+        for (;;) {
+            cin >> number;
+            if (!number) {
+                break;
+            }
+            else if (number > maxNumber) {
+                maxNumber = number;
+                count = 1;
+            }
+            else if (number == maxNumber) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    string problem14() {
+        string str;
+        constexpr auto sep = ' ';
+        getline(cin, str);
+
+        set<int> numbersFromFirst;
+        function<void(int)> action = [&](auto number)
+            {
+                numbersFromFirst.insert(number);
+            };
+
+        string generalNumbers;
+        for (auto index = 0; index < str.length(); index++) {
+            auto symbol = str[index];
+
+            if (symbol == sep) {
+                action = [&](auto number)
+                    {
+                        if (numbersFromFirst.find(number) != numbersFromFirst.end())
+                            generalNumbers += format("{} ", number);
+                    };
+                continue;
+            }
+
+            auto number = symbol - '0';
+            action(number);
+        }
+        return generalNumbers;
+    }
 }
 
 
 namespace Labs
 {
+    double genRandomNumber(double min, double max) {
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_real_distribution<> dis(min, max);
+        return dis(gen);
+    }
+
+    ComplexNumber::ComplexNumber(const std::vector<double>& v) :
+        re_(v[0]), im_(v[1]) {}
+
     double ComplexNumber::re() const {
         return re_;
     }
@@ -289,7 +434,7 @@ namespace Labs
     }
 
     double ComplexNumber::abs() const {
-        return std::sqrt(im_ * im_ + re_ * re_);
+        return sqrt(im_ * im_ + re_ * re_);
     }
 
     ComplexNumber ComplexNumber::operator*(const ComplexNumber& other) const {
@@ -333,6 +478,72 @@ namespace Labs
         );
     }
 
+    Carrier::Carrier() {
+        gens_ = { genRandomNumber(-10, 10), genRandomNumber(-10, 10) };
+    }
+
+    bool Carrier::operator<(const Carrier& other) const {
+        return target_ < other.target();
+    }
+
+    Carrier Carrier::newChild(const Carrier& otherParent) const {
+        vector<double> newGens(gens_.size());
+        auto& otherGens = otherParent.gens();
+        for (auto i = 0; i < gens_.size(); i++) {
+            auto gen = (gens_[i] + otherGens[i]) / 2;
+            auto percent = abs(gen / 20);
+            newGens[i] = gen + genRandomNumber(-percent, percent);
+        }
+        return { newGens };
+    }
+
+    const vector<double>& Carrier::gens() const {
+        return gens_;
+    }
+
+    optional<double> Carrier::target() const {
+        return target_;
+    }
+    void Carrier::setTarget(double target) {
+        target_ = target;
+    }
+
+
+    Population::Population(const size_t& size, const unsigned numberRandomCarriers) :
+        size_(size), numberRandomCarriers_(numberRandomCarriers) {
+        contain_.resize(size);
+        for (auto i = 0; i < size; i++) {
+            contain_[i] = {};
+        }
+    }
+
+    void Population::evo(const FitnessFunction& fitFunc, const unsigned numberEpoch) {
+        for (auto i = 0; i < numberEpoch; i++) {
+            calcFit(fitFunc);
+            crossover();
+        }
+        calcFit(fitFunc);
+    }
+
+    void Population::calcFit(const FitnessFunction& fitFunc) {
+        for (auto& carrier : contain_)
+            carrier.setTarget(fitFunc(carrier));
+
+        sort(contain_.begin(), contain_.end());
+    }
+
+    void Population::crossover() {
+        auto& bestParent = contain_.front();
+        auto indexLastParent = size_ - numberRandomCarriers_;
+
+        for (auto index = 1; index < indexLastParent + 1; index++)
+            contain_[index] = bestParent.newChild(contain_[index]);
+
+        for (auto index = indexLastParent + 1; index < size_; index++)
+            contain_[index] = {};
+    }
+
+
     namespace Tests
     {
         void complexNumber() {
@@ -346,6 +557,13 @@ namespace Labs
             auto poly = Polynom({ ComplexNumber(0, 10), ComplexNumber(0, 1) });
             assert(poly.at(ComplexNumber(0, 0)) == ComplexNumber(0, 10));
             assert(poly.at(ComplexNumber(1, 0)) == ComplexNumber(0, 11));
+
+            auto poly2 = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
+            constexpr auto epsilonZero = 1e-6;
+            assert(poly2.at({ 1, 0 }).abs() < epsilonZero);
+            assert(poly2.at({ 2, 0 }).abs() < epsilonZero);
+            assert(poly2.at({ 3, 0 }).abs() < epsilonZero);
+            assert(poly2.at({ 4, 0 }).abs() < epsilonZero);
         }
     }
 }
@@ -354,6 +572,17 @@ namespace Labs
 int main() {
     Labs::Tests::complexNumber();
     Labs::Tests::polynom();
+
+    // roots: 1, 2, 3, 4
+    auto poly = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
+
+    auto fitnessFunc = [&poly](const Labs::Carrier& c)
+        {
+            return poly.at(Labs::ComplexNumber(c.gens())).abs();;
+        };
+
+    auto population = Labs::Population(10, 4);
+    population.evo(fitnessFunc, 50);
 
     system("pause");
 }
