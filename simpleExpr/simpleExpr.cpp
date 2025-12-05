@@ -410,6 +410,35 @@ namespace problems
         }
         return generalNumbers;
     }
+
+    string problem14Another() {
+        string str;
+        constexpr auto sep = ' ';
+        getline(cin, str);
+
+        set<int> numbersFromFirst;
+        string generalNumbers;
+        auto index{ 0 };
+        for (;; index++) {
+            auto symbol = str[index];
+
+            if (symbol == sep)
+                break;
+
+            auto number = symbol - '0';
+            numbersFromFirst.insert(number);
+        }
+
+        for (; index < str.length(); index++) {
+            auto symbol = str[index];
+            auto number = symbol - '0';
+
+            if (numbersFromFirst.find(number) != numbersFromFirst.end())
+                generalNumbers += format("{} ", number);
+        }
+
+        return generalNumbers;
+    }
 }
 
 
@@ -486,15 +515,26 @@ namespace Labs
         return target_ < other.target();
     }
 
+    double Carrier::newGen(double gen1, double gen2) {
+        auto gen = (gen1 + gen2) / 2;
+        auto percent = abs(gen / 20);
+        return gen + genRandomNumber(-percent, percent);
+    }
+
+    // TBD: refactor newChild and mergeForNew
     Carrier Carrier::newChild(const Carrier& otherParent) const {
         vector<double> newGens(gens_.size());
         auto& otherGens = otherParent.gens();
-        for (auto i = 0; i < gens_.size(); i++) {
-            auto gen = (gens_[i] + otherGens[i]) / 2;
-            auto percent = abs(gen / 20);
-            newGens[i] = gen + genRandomNumber(-percent, percent);
-        }
+        for (auto i = 0; i < gens_.size(); i++)
+            newGens[i] = newGen(gens_[i], otherGens[i]);
+
         return { newGens };
+    }
+
+    void Carrier::mergeForNew(const Carrier& otherParent) {
+        auto& otherGens = otherParent.gens();
+        for (auto i = 0; i < gens_.size(); i++)
+            gens_[i] = newGen(gens_[i], otherGens[i]);
     }
 
     const vector<double>& Carrier::gens() const {
@@ -512,15 +552,14 @@ namespace Labs
     Population::Population(const size_t& size, const unsigned numberRandomCarriers) :
         size_(size), numberRandomCarriers_(numberRandomCarriers) {
         contain_.resize(size);
-        for (auto i = 0; i < size; i++) {
+        for (auto i = 0; i < size; i++)
             contain_[i] = {};
-        }
     }
 
     void Population::evo(const FitnessFunction& fitFunc, const unsigned numberEpoch) {
         for (auto i = 0; i < numberEpoch; i++) {
             calcFit(fitFunc);
-            crossover();
+            crossingover();
         }
         calcFit(fitFunc);
     }
@@ -532,14 +571,15 @@ namespace Labs
         sort(contain_.begin(), contain_.end());
     }
 
-    void Population::crossover() {
+    void Population::crossingover() {
         auto& bestParent = contain_.front();
         auto indexLastParent = size_ - numberRandomCarriers_;
 
-        for (auto index = 1; index < indexLastParent + 1; index++)
-            contain_[index] = bestParent.newChild(contain_[index]);
+        for (auto index = 1; index < indexLastParent; index++)
+            contain_[index].mergeForNew(bestParent);
+            //contain_[index] = bestParent.newChild(contain_[index]);
 
-        for (auto index = indexLastParent + 1; index < size_; index++)
+        for (auto index = indexLastParent; index < size_; index++)
             contain_[index] = {};
     }
 
@@ -578,7 +618,7 @@ int main() {
 
     auto fitnessFunc = [&poly](const Labs::Carrier& c)
         {
-            return poly.at(Labs::ComplexNumber(c.gens())).abs();;
+            return poly.at(Labs::ComplexNumber(c.gens())).abs();
         };
 
     auto population = Labs::Population(10, 4);

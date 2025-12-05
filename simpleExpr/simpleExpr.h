@@ -46,6 +46,7 @@ namespace problems
     int problem13Other();
 
     std::string problem14();
+    std::string problem14Another();
 }
 
 namespace Labs
@@ -94,10 +95,14 @@ namespace Labs
         bool operator<(const Carrier& other) const ;
 
         Carrier newChild(const Carrier& otherParent) const;
+        void mergeForNew(const Carrier& otherParent);
         const vector<double>& gens() const;
 
         optional<double> target() const;
         void setTarget(double);
+
+    private:
+        static double newGen(double gen1, double gen2);
 
     private:
         vector<double> gens_;
@@ -114,7 +119,7 @@ namespace Labs
 
     private:
         void calcFit(const FitnessFunction& fitFunction);
-        void crossover();
+        void crossingover();
 
     private:
         size_t size_;
