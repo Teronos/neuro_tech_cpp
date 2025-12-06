@@ -58,7 +58,7 @@ namespace Labs
     class ComplexNumber {
     public:
         ComplexNumber(const vector<double>& v);
-        ComplexNumber(double re, double im) : re_(re), im_(im) {}
+        ComplexNumber(double re = 0, double im = 0) : re_(re), im_(im) {}
 
         double re() const;
         double im() const;
@@ -116,6 +116,7 @@ namespace Labs
         Population(const size_t& size, const unsigned numberRandomCarriers);
 
         void evo(const FitnessFunction& fitFunc, const unsigned numberEpoch);
+        const Carrier& bestCarrier() const;
 
     private:
         void calcFit(const FitnessFunction& fitFunction);
@@ -127,10 +128,70 @@ namespace Labs
         vector<Carrier> contain_;
     };
 
+    enum StateDirection {
+        Up,
+        Left,
+        Down,
+        Right
+    };
+
+    enum StateStep {
+        Normal,
+        Decrease,
+        Increase
+    };
+
+
+    // tbd: refactor with templates + concepts
+    struct StrategyDirection {
+        StrategyDirection();
+
+        void update(StateDirection action, double reward);
+
+        unordered_map<StateDirection, vector<double>> contain;
+        StateDirection state;
+    };
+
+    // tbd: refactor with templates + concepts
+    struct StrategyStep {
+        StrategyStep();
+
+        void update(StateStep action, double reward);
+
+        unordered_map<StateStep, vector<double>> contain;
+        StateStep state;
+    };
+
+    class Environment {
+    public:
+        Environment(function<double(const ComplexNumber&)> c);
+
+        double reward(const ComplexNumber& currentPos,
+            const ComplexNumber& newPos) const;
+
+    private:
+        function<double(const ComplexNumber&)> closure_;
+    };
+
+    class Agent {
+    public:
+        Agent() {};
+
+        void evo(const Environment& env);
+
+    private:
+        double step_{1};
+        unsigned maxIter_{1000};
+        ComplexNumber position_{};
+        StrategyDirection stDirect_{};
+        StrategyStep stStep_{};
+    };
+
     namespace Tests
     {
         void complexNumber();
         void polynom();
+        void genAlg();
     }
 }
 

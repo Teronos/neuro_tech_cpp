@@ -571,8 +571,12 @@ namespace Labs
         sort(contain_.begin(), contain_.end());
     }
 
+    const Carrier& Population::bestCarrier() const {
+        return contain_.front();
+    }
+
     void Population::crossingover() {
-        auto& bestParent = contain_.front();
+        auto& bestParent = bestCarrier();
         auto indexLastParent = size_ - numberRandomCarriers_;
 
         for (auto index = 1; index < indexLastParent; index++)
@@ -582,7 +586,76 @@ namespace Labs
         for (auto index = indexLastParent; index < size_; index++)
             contain_[index] = {};
     }
+    
+    StrategyDirection::StrategyDirection() : state(Up) {
+        auto value = vector<double>(4);
+        contain[Up] = value;
+        contain[Left] = value;
+        contain[Down] = value;
+        contain[Right] = value;
+    }
 
+    void StrategyDirection::update(StateDirection action, double reward) {
+        constexpr auto alpha = 0.8;
+        constexpr auto gamma = 0.99;
+
+        auto findBestWish = [&] ()
+            {
+                return ranges::max(contain[state]);
+            };
+
+        auto toInt = [](auto action)
+            {
+                return static_cast<unsigned>(action);
+            };
+
+        auto& cell = contain[state][toInt(action)];
+        cell = (1 - alpha) * cell + alpha * (reward + gamma * findBestWish());
+        state = action;
+    }
+
+    void StrategyStep::update(StateStep action, double reward) {
+    // TO DO: написать по аналогии с методом changeStrategy
+    }
+
+    StrategyStep::StrategyStep() : state(Normal) {
+    // TO DO: написать по аналогии с конструктором StrategyDirection
+    }
+
+    Environment::Environment(function<double(const ComplexNumber&)> c)
+        : closure_(c) {}
+
+    double Environment::reward(const ComplexNumber& currentPos,
+        const ComplexNumber& newPos) const {
+
+        auto currentVal = closure_(currentPos);
+        auto newVal = closure_(newPos);
+
+        if (newVal < currentVal) {
+            if (newVal < 10)
+                return 10;
+            else if (newVal < 100)
+                return 5;
+            else 
+                return -1; 
+        }
+        else {
+            return -10;
+        }
+    }
+
+
+    void Agent::evo(const Environment& env) {
+        // TO DO:
+        //  1) Агент должен "обучаться" не более чем maxIter_ раз
+        //  2) В момент "обучения" у Агента должен быть выбор:
+        //      выбрать случайную стратегию изменения шага и направления;
+        //      выбрать жадным способом(с наибольим ожидаемым результатом)
+        // 3) После выбора стратегии получить значени новой точки в комплексном
+        //      прострастве, на оснвое текущей точки и новой рассчитать награду агенту
+        // 4) Обновить стратегии выбора шага и направления Агента 
+        // 5*) Можно придумтаь каие-либо дополнительыне условия останова или что-то другое
+    }
 
     namespace Tests
     {
@@ -594,9 +667,9 @@ namespace Labs
         }
 
         void polynom() {
-            auto poly = Polynom({ ComplexNumber(0, 10), ComplexNumber(0, 1) });
-            assert(poly.at(ComplexNumber(0, 0)) == ComplexNumber(0, 10));
-            assert(poly.at(ComplexNumber(1, 0)) == ComplexNumber(0, 11));
+            auto poly = Polynom({ {0, 10}, {0, 1} });
+            assert(poly.at({ 0, 0 }) == ComplexNumber(0, 10));
+            assert(poly.at({ 1, 0 }) == ComplexNumber(0, 11));
 
             auto poly2 = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
             constexpr auto epsilonZero = 1e-6;
@@ -605,6 +678,19 @@ namespace Labs
             assert(poly2.at({ 3, 0 }).abs() < epsilonZero);
             assert(poly2.at({ 4, 0 }).abs() < epsilonZero);
         }
+
+        void genAlg() {
+            auto poly = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
+
+            auto fitnessFunc = [&poly](const Labs::Carrier& c)
+                {
+                    return poly.at(Labs::ComplexNumber(c.gens())).abs();
+                };
+
+            auto population = Labs::Population(10, 4);
+            population.evo(fitnessFunc, 100);
+            assert(population.bestCarrier().target().value() < 1);
+        }
     }
 }
 
@@ -612,17 +698,18 @@ namespace Labs
 int main() {
     Labs::Tests::complexNumber();
     Labs::Tests::polynom();
+    Labs::Tests::genAlg();
 
     // roots: 1, 2, 3, 4
     auto poly = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
 
-    auto fitnessFunc = [&poly](const Labs::Carrier& c)
+    auto closure = [&poly](const Labs::ComplexNumber& c)
         {
-            return poly.at(Labs::ComplexNumber(c.gens())).abs();
+            return poly.at(c).abs();
         };
 
-    auto population = Labs::Population(10, 4);
-    population.evo(fitnessFunc, 50);
+    auto agent = Labs::Agent();
+    agent.evo(Labs::Environment(closure));
 
     system("pause");
 }
