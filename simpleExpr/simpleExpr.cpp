@@ -444,10 +444,19 @@ namespace problems
 
 namespace Labs
 {
+    // tbd: refactor
     double genRandomNumber(double min, double max) {
         random_device rd;
         mt19937 gen(rd());
         uniform_real_distribution<> dis(min, max);
+        return dis(gen);
+    }
+
+    // tbd: refactor
+    int genRandomInt(int min, int max) {
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<> dis(min, max);
         return dis(gen);
     }
 
@@ -471,6 +480,10 @@ namespace Labs
             re_ * other.re() - im_ * other.im(),
             re_ * other.im() + other.re() * im_
         };
+    }
+
+    ComplexNumber ComplexNumber::operator*(double scalar) const {
+        return { re_ * scalar, im_ * scalar };
     }
 
     ComplexNumber ComplexNumber::pow(unsigned n) const {
@@ -595,6 +608,34 @@ namespace Labs
         contain[Right] = value;
     }
 
+    StateDirection StrategyDirection::random() {
+        switch (genRandomInt(0, 3)) {
+        case 0:
+            return Up;
+        case 1:
+            return Left;
+        case 2:
+            return Down;
+        case 3:
+            return Right;
+        }
+    }
+
+    ComplexNumber StrategyDirection::toComplex(StateDirection dir) {
+        switch (dir) {
+        case Up:
+            return { 0, 1 };
+        case Left:
+            return { -1, 0 };
+        case Down:
+            return { 0, -1 };
+        case Right:
+            return { 1, 0 };
+        }
+    }
+
+
+    // tbd: refactor
     void StrategyDirection::update(StateDirection action, double reward) {
         constexpr auto alpha = 0.8;
         constexpr auto gamma = 0.99;
@@ -614,12 +655,42 @@ namespace Labs
         state = action;
     }
 
+    //tbd: refactor
     void StrategyStep::update(StateStep action, double reward) {
-    // TO DO: написать по аналогии с методом changeStrategy
+        constexpr auto alpha = 0.8;
+        constexpr auto gamma = 0.99;
+
+        auto findBestWish = [&]()
+            {
+                return ranges::max(contain[state]);
+            };
+
+        auto toInt = [](auto action)
+            {
+                return static_cast<unsigned>(action);
+            };
+
+        auto& cell = contain[state][toInt(action)];
+        cell = (1 - alpha) * cell + alpha * (reward + gamma * findBestWish());
+        state = action;
     }
 
     StrategyStep::StrategyStep() : state(Normal) {
-    // TO DO: написать по аналогии с конструктором StrategyDirection
+        auto value = vector<double>(3);
+        contain[Normal] = value;
+        contain[Increase] = value;
+        contain[Decrease] = value;
+    }
+
+    StateStep StrategyStep::random() {
+        switch (genRandomInt(0, 2)) {
+        case 0:
+            return Normal;
+        case 1:
+            return Increase;
+        case 2:
+            return Decrease;
+        }
     }
 
     Environment::Environment(function<double(const ComplexNumber&)> c)
@@ -630,6 +701,9 @@ namespace Labs
 
         auto currentVal = closure_(currentPos);
         auto newVal = closure_(newPos);
+
+        if (newVal < 0.6)
+            positionsNearRoot_.push_back(newPos);
 
         if (newVal < currentVal) {
             if (newVal < 10)
@@ -647,14 +721,66 @@ namespace Labs
 
     void Agent::evo(const Environment& env) {
         // TO DO:
-        //  1) Агент должен "обучаться" не более чем maxIter_ раз
-        //  2) В момент "обучения" у Агента должен быть выбор:
-        //      выбрать случайную стратегию изменения шага и направления;
-        //      выбрать жадным способом(с наибольим ожидаемым результатом)
-        // 3) После выбора стратегии получить значени новой точки в комплексном
-        //      прострастве, на оснвое текущей точки и новой рассчитать награду агенту
-        // 4) Обновить стратегии выбора шага и направления Агента 
-        // 5*) Можно придумтаь каие-либо дополнительыне условия останова или что-то другое
+        // *) Можно придумать каие-либо дополнительыне условия останова или что-то другое
+
+        constexpr auto epsilon = 0.1;
+        for (auto iter = 0; iter < maxIter_; iter++) {
+
+            StateDirection dir{};
+            StateStep modif{};
+
+            if (genRandomNumber(0, 1) < epsilon) {
+                //случайно прринимаем решение
+                dir = StrategyDirection::random();
+                modif = StrategyStep::random();
+            }
+            else {
+            // жадным способом, возможно стоит рефакторить на ranges
+                
+                auto findMaxPosition = [](auto collect)
+                    {
+                        auto maxElem = collect.front();
+                        auto maxIndex = 0;
+                        for (auto i = 1; i < collect.size(); i++) {
+                            auto elem = collect[i];
+                            if (elem > maxElem) {
+                                maxElem = elem;
+                                maxIndex = i;
+                            }
+                        }
+                        return maxIndex;
+                    };
+
+                dir = static_cast<StateDirection>(findMaxPosition(stDirect_.contain[stDirect_.state]));
+                modif = static_cast<StateStep>(findMaxPosition(stStep_.contain[stStep_.state]));
+            }
+
+            // tbd: refactor
+            auto toDouble = [](StateStep mod)
+                {
+                    switch (mod) {
+                    case Normal:
+                        return 1.0;
+                    case Increase:
+                        return 2.0;
+                    case Decrease:
+                        return 0.5;
+                    }
+                };
+
+            step_ *= toDouble(modif);
+
+            auto newPosition = position_ + StrategyDirection::toComplex(dir) * step_;
+            auto rew = env.reward(position_, newPosition);
+            position_ = newPosition;
+
+            stDirect_.update(dir, rew);
+            stStep_.update(modif, rew);
+
+            // ниже блок хитростей, стоит подумать может как-то переделать
+            if (step_ < 1e-8)
+                step_ = 1;
+        }
     }
 
     namespace Tests
@@ -709,7 +835,8 @@ int main() {
         };
 
     auto agent = Labs::Agent();
-    agent.evo(Labs::Environment(closure));
+    auto env = Labs::Environment(closure);
+    agent.evo(env);
 
     system("pause");
 }

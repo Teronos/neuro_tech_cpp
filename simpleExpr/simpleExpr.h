@@ -66,6 +66,8 @@ namespace Labs
         ComplexNumber pow(unsigned n) const;
         
         ComplexNumber operator*(const ComplexNumber& other) const;
+        ComplexNumber operator*(double scalar) const;
+
         ComplexNumber operator+(const ComplexNumber& other) const;
         bool operator==(const ComplexNumber& other) const;
 
@@ -137,8 +139,8 @@ namespace Labs
 
     enum StateStep {
         Normal,
-        Decrease,
-        Increase
+        Increase,
+        Decrease
     };
 
 
@@ -147,6 +149,9 @@ namespace Labs
         StrategyDirection();
 
         void update(StateDirection action, double reward);
+
+        static StateDirection random();
+        static ComplexNumber toComplex(StateDirection dir);
 
         unordered_map<StateDirection, vector<double>> contain;
         StateDirection state;
@@ -157,6 +162,8 @@ namespace Labs
         StrategyStep();
 
         void update(StateStep action, double reward);
+
+        static StateStep random();
 
         unordered_map<StateStep, vector<double>> contain;
         StateStep state;
@@ -170,6 +177,7 @@ namespace Labs
             const ComplexNumber& newPos) const;
 
     private:
+        mutable vector<ComplexNumber> positionsNearRoot_;
         function<double(const ComplexNumber&)> closure_;
     };
 
