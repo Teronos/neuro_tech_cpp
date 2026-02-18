@@ -1,0 +1,23 @@
+{
+  "name": "Mike",
+  "surname": "Vazovsky",
+  "age": 13.4,
+  "dict": {
+    "1": 1,
+    "2": 2,
+    "3": 3
+  },
+  "meta_info": {
+    "lang": "ru",
+    "work_locations": [
+      {
+        "city": "Moscow",
+        "street": "Academicheskay"
+      },
+      {
+        "city": "Omsk",
+        "street": "Kammenay"
+      }
+    ]
+  }
+}
