@@ -13,7 +13,6 @@
 
 namespace Labs
 {
- 
     namespace Tests
     {
         void complexNumber();
