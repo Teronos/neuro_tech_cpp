@@ -26,6 +26,8 @@ namespace Labs {
             return Down;
         case 3:
             return Right;
+        default:
+            return Up;
         }
     }
 
@@ -39,6 +41,8 @@ namespace Labs {
             return { 0, -1 };
         case Right:
             return { 1, 0 };
+        default:
+            return { 0, 0 };
         }
     }
 
@@ -98,10 +102,12 @@ namespace Labs {
             return Increase;
         case 2:
             return Decrease;
+        default:
+            return Normal;
         }
     }
 
-    Environment::Environment(function<double(const ComplexNumber&)>& c)
+    Environment::Environment(const Target& c)
         : closure_(c) {}
 
     double Environment::reward(const ComplexNumber& currentPos,
@@ -173,6 +179,8 @@ namespace Labs {
                         return 2.0;
                     case Decrease:
                         return 0.5;
+                    default:
+                        return 1.0;
                     }
                 };
 

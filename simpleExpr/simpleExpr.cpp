@@ -2,9 +2,9 @@
 #include "utils.h"
 
 #include "geneticAlgorithm.h"
+#include "qlearning.h"
 
-#include <random>
-#include <set>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <fstream>
 
@@ -32,7 +32,7 @@ namespace Labs
             assert(poly.at({ 0, 0 }) == ComplexNumber(0, 10));
             assert(poly.at({ 1, 0 }) == ComplexNumber(0, 11));
 
-            auto poly2 = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
+            auto poly2 = Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
             constexpr auto epsilonZero = 1e-6;
             assert(poly2.at({ 1, 0 }).abs() < epsilonZero);
             assert(poly2.at({ 2, 0 }).abs() < epsilonZero);
@@ -41,16 +41,31 @@ namespace Labs
         }
 
         void genAlg() {
-            auto poly = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
+            auto poly = Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
 
-            auto fitnessFunc = [&poly](const Labs::Carrier& c)
+            auto fitnessFunc = [&poly](const Carrier& c)
                 {
-                    return poly.at(Labs::ComplexNumber(c.gens())).abs();
+                    return poly.at(ComplexNumber(c.gens())).abs();
                 };
 
-            auto population = Labs::Population(10, 4);
+            auto population = Population(10, 4);
             population.evo(fitnessFunc, 100);
             assert(population.bestCarrier().target().value() < 1);
+        }
+
+        void qLearning() {
+            // tbd: дописать тест
+           
+            auto poly = Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
+
+            auto closure = [&poly] (auto& c)
+                {
+                    return poly.at(c).abs();
+                };
+
+            auto agent = Agent();
+            auto env = Environment(closure);
+            agent.evo(env);
         }
     }
 }
@@ -60,18 +75,6 @@ int main() {
     Labs::Tests::complexNumber();
     Labs::Tests::polynom();
     Labs::Tests::genAlg();
-
-    // roots: 1, 2, 3, 4
-    auto poly = Labs::Polynom({ {24, 0}, {-50, 0}, {35, 0}, {-10, 0}, {1, 0} });
-
-    auto closure = [&poly](const Labs::ComplexNumber& c)
-        {
-            return poly.at(c).abs();
-        };
-
-   // auto agent = Labs::Agent();
-   // auto env = Labs::Environment(closure);
-    //agent.evo(env);
 
     ifstream f("example.json");
     json data = json::parse(f);
@@ -100,7 +103,13 @@ int main() {
     auto loc = workLocations.dump();
     vector<unordered_map<string, string>> locations = workLocations;
 
-
-
-    system("pause");
+    json output, functionGraph;
+    output["type"] = "plot_points";
+    functionGraph["x_points"] = vector<double>({ 0, 1, 2, 3, 4, 5 });
+    functionGraph["y_points"] = vector<double>({ 0, 1, 0, 2, 0, -4 });
+    output["values"] = functionGraph;
+    
+    cout << output.dump();
+  
+    //system("pause");
 }

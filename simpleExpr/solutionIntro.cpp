@@ -1,6 +1,13 @@
 #include "solutionIntro.h"
 
 #include <set>
+#include <iostream>
+#include <string>
+#include <ranges>
+#include <unordered_map>
+#include <algorithm>
+#include <functional>
+#include <numeric>
 
 namespace
 {
@@ -167,7 +174,7 @@ namespace problems
     }
 
     unsigned problem5() {
-        unsigned number;
+        size_t number;
         cin >> number;
 
         unsigned minValue = numeric_limits<unsigned>::max(), count{};
@@ -189,7 +196,7 @@ namespace problems
 
     unsigned problem5Another()
     {
-        unsigned number;
+        size_t number;
         cin >> number;
 
         auto values = ranges::iota_view{ 0u, number } | // 0 1 ... number-1
@@ -266,7 +273,7 @@ namespace problems
 
     string problem9()
     {
-        unsigned maxNumber;
+        size_t maxNumber;
         cin >> maxNumber;
 
         constexpr int basic = 2;

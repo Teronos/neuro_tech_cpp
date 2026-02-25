@@ -1,20 +1,11 @@
 #pragma once
 
-#include <cassert>
-#include <iostream>
 #include <string>
-#include <ranges>
-#include <unordered_map>
-#include <algorithm>
-#include <functional>
-#include <numeric>
-#include <sstream>
 
 using namespace std;
 
 
-namespace problems
-{
+namespace problems {
     int problem1();
     int problem1AlexR();
     int problem1Diamond();

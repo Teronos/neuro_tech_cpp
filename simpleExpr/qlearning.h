@@ -8,8 +8,6 @@ namespace Labs {
     using namespace std;
     using namespace utils;
 
-    //double genRandomNumber(double min, double max);
-
     enum StateDirection {
         Up,
         Left,
@@ -50,14 +48,15 @@ namespace Labs {
 
     class Environment {
     public:
-        Environment(function<double(const ComplexNumber&)>& c);
+        using Target = function<double(const ComplexNumber&)>;
+        Environment(const Target& c);
 
         double reward(const ComplexNumber& currentPos,
             const ComplexNumber& newPos) const;
 
     private:
         mutable vector<ComplexNumber> positionsNearRoot_;
-        function<double(const ComplexNumber&)> closure_;
+        Target closure_;
     };
 
     class Agent {
@@ -68,7 +67,7 @@ namespace Labs {
 
     private:
         double step_{ 1 };
-        unsigned maxIter_{ 1000 };
+        size_t maxIter_{ 1000 };
         ComplexNumber position_{};
         StrategyDirection stDirect_{};
         StrategyStep stStep_{};
